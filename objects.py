@@ -13,13 +13,20 @@ class LEXContentObject(object):
 	def __eq__(self, other):
 		return (isinstance(other, LEXContentObject) and self.fullname == other.fullname)
 	
+	def __ne__(self, other):
+		return not (self == other)
+
 	def __getattr__(self, attr):
 		if not self.has_fetched:
 			self.has_fetched = self._populate(None, True)
 			return getattr(self, attr)
 		raise AttributeError('\'%s\' has no attribute \'%s\'' % (type(self),
 																attr))
-	
+	def __str__(self):
+		strname = self.__unicode__()
+		strname = strname.encode('utf-8')
+		return strname
+
 	def __setattr__(self, name, value):
 		super(LEXContentObject, self).__setattr__(name, value)
 
@@ -38,7 +45,6 @@ class LEXContentObject(object):
 class Plugin(LEXContentObject):
 	
 	"""A class for plugins uploaded to LEX"""
-
 	@staticmethod
 	def from_url(lex_session, url):
 		pass
@@ -47,6 +53,12 @@ class Plugin(LEXContentObject):
 		super(Plugin, self).__init__(lex_session, json_dict)
 
 		# self.permalink = urljoin(lex_session.config['plugin'], self.id)
+
+
+
+	def __unicode__(self):
+		fullname = self.fullname.replace('\r\n', ' ')
+		return fullname
 
 
 	@property
@@ -58,6 +70,16 @@ class Plugin(LEXContentObject):
 		the author such as 'by NAM Team'
 		"""
 		return '%s (v. %s) by %s' % (self.name, self.version, self.author)
+
+
+	def from_url(lex_session, url):
+		"""Request the URL and return a Plugin object.
+
+		Requires parsing HTML to get data."""
+
+		pass
+		# params = {}
+		# plugin_info = reddit_session, request_json(url, params=params)
 
 
 

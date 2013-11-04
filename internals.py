@@ -7,7 +7,7 @@ def _prepare_request(lex_session, url, params, data, auth, files):
 	headers.update(lex_session.http.headers)
 
 	request = Request(method='GET', url=url, headers=headers, params=params, auth=auth, cookies=lex_session.http.cookies)
-	
+
 	if not data and not files: # GET request
 		return request
 	if not auth:
@@ -17,3 +17,5 @@ def _prepare_request(lex_session, url, params, data, auth, files):
 	request.files = files
 	return request
 	
+def _get_sorted(order='', *args, **kwargs):
+	"""Return a function to generate specific plugin listings."""

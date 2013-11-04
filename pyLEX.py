@@ -1,13 +1,11 @@
-import sys
 import requests
 import cookielib
 import json
-import errors
 from requests.compat import urljoin
-from requests import Request
 from handlers import DefaultHandler
 from internals import _prepare_request
 from objects import Plugin
+import decorators
 
 class Config(object):
 	"""A class containing the configuration for the LEX site"""
@@ -15,9 +13,21 @@ class Config(object):
 	API_PATHS = {
 		'login' : 'lex_login.php',
 		'search' : 'lex_api_search.php',
-		'plugin' : 'lex_filedesc.php?lotGET=%s'
+		'plugin' : 'lex_filedesc.php?lotGET=%d',
+		'dependancy' : 'lex_deptracker.php?LotID=%d',
+		'download' : 'lex_filedesc.php?lotDOWNLOAD=%d',
+		'add_to_download_list' : 'lex_lotlist_lview.php?cLOTID=%d&addBASKET=T'
 	}
 
+	BROAD_CATEGORIES = {
+		'tools_and_docs' : 'other',
+		'mods' : 'mods',
+		'maps' : 'maps',
+		'dependancy' : 'dependancy',
+		'lots_and_bats' : 'lotbat',
+		'all': 'all'
+
+	}
 	def __init__(self, site_name):
 		self._site_url = "http://sc4devotion.com/csxlex/"
 
@@ -118,8 +128,15 @@ class BaseLEX(object):
 		self._authentication = True
 
 	def get_content(self, url, params=None, limit=0, root_field='result'):
+
+		"""A generator method to return LEX content from a URL.
+
+		"""
+		fetch_all = fetch_once = False
 		objects_found = 0
 		params = params or {}
+		if url == self.config['search'] and 'broad_type' not in params:
+			params['broad_type'] = self.config.BROAD_CATEGORIES['all']
 		if limit is None:
 			fetch_all = True
 			params['limit'] = 30
@@ -141,17 +158,53 @@ class BaseLEX(object):
 
 				if objects_found == limit:
 					return
-
-			return
+			if objects_found < limit and 'start' not in params:
+				params['start'] = objects_found
+			elif objects_found < limit and params['start'] < params['limit']:
+				params['start'] = objects_found
+			else:
+				return
 
 
 	def get_recent(self, *args, **kwargs ):
+		
 		"""Return a get_content generator for recent uploads."""
-		params = {'order_by': 'recent',
-		'broad_type' : 'all'}
-
+		
+		params = {'order_by': 'recent'}
 		url = self.config['search']
 		return self.get_content(url, params=params, *args, **kwargs)
+
+	def get_popular(self, *args, **kwargs):
+
+		"""Return a get_content generator for the most popular uploads."""
+
+		params = {'order_by': 'popular'}
+		url = self.config['search']
+		return self.get_content(url, params=params, *args, **kwargs)
+
+	def get_updated(self, *args, **kwargs):
+
+		"""Return a get_content generator for recently updated uploads."""
+
+		params = {'order_by': 'update'}
+		url = self.config['search']
+		return self.get_content(url, params=params, *args, **kwargs)
+
+	def get_plugin(self, url=None, plugin_id=None):
+		"""Returns a Plugin object for the given url or plugin ID."""
+
+		if bool(url) == bool(plugin_id):
+			raise TypeError('Please specify either url or plugin_id, but not both!')
+		if plugin_id:
+			url = self.config['plugin'] % plugin_id
+		return objects.Plugin.from_url(url)
+
+	
+
+	@decorators.restrict_access(login=True)
+	def download_plugin(self, *args, **kwargs):
+		pass
+
 
 class LEX(BaseLEX):
 	"""Provides access to the LEX API"""
@@ -163,5 +216,6 @@ if __name__ == '__main__':
 	# l.login(username='pyLEX', password='Bm8QPvan')
 	for thing in l.get_recent():
 		print thing.fullname
+
 
 
