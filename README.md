@@ -18,7 +18,6 @@ for plugin in recent_plugins:
     print plugin
 ```
 
-.. end_usage
 
 License
 -------
@@ -26,4 +25,3 @@ License
 All of the code contained here is licensed by
 `the GNU GPLv3 <https://github.com/simonwillcock/pyLEX/blob/master/license>`_.
 
-.. end_license
