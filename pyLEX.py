@@ -22,7 +22,8 @@ import objects
 import decorators
 from BeautifulSoup import BeautifulSoup
 
-VERSION = 0.1
+__version__ = '0.1'
+
 
 class Config(object):
 	"""A class containing the configuration for the LEX site"""
@@ -237,7 +238,7 @@ class UnauthenticatedLEX(BaseLEX):
 		super(UnauthenticatedLEX, self).__init__(*args, **kwargs)
 
 	def get_creator(self, user_name, *args, **kwargs):
-		
+
 		"""Return a User isntance for the username specified."""
 
 		url = self.config['power_search']

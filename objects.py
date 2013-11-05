@@ -12,9 +12,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-import json
-from requests.compat import urljoin
-from internals import _get_user_plugins, _get_sorter
+# import json
+# from requests.compat import urljoin
+# from internals import _get_sorter
 
 
 class LEXContentObject(object):
@@ -26,7 +26,7 @@ class LEXContentObject(object):
 		self.has_fetched = self._populate(json_dict, fetch)
 
 	def __eq__(self, other):
-		return (isinstance(other, LEXContentObject) and self.fullname == other.fullname)
+		return (isinstance(other, LEXContentObject) and self.name == other.name)
 	
 	def __ne__(self, other):
 		return not (self == other)
@@ -54,8 +54,6 @@ class LEXContentObject(object):
 			json_dict = {}
 
 		for name, value in json_dict.iteritems():
-			if name == 'author':
-				value = self.get_creator(user_name=value)
 			setattr(self, name, value)
 		return bool(json_dict) or fetch
 
@@ -67,7 +65,6 @@ class Plugin(LEXContentObject):
 	def __init__(self, lex_session, json_dict):
 		super(Plugin, self).__init__(lex_session, json_dict)
 
-		# self.permalink = urljoin(lex_session.config['plugin'], self.id)
 
 	def __repr__(self):
 		return 'Plugin(name=\'{0}\', version=\'{1}\', author=\'{2}\')'.format(self.name, 
@@ -77,9 +74,9 @@ class Plugin(LEXContentObject):
 		fullname = self.fullname.replace('\r\n', ' ')
 		return fullname
 
-	@staticmethod
-	def from_url(lex_session, url):
-		pass
+	# @staticmethod
+	# def from_url(lex_session, url):
+	# 	pass
 
 	@property
 	def fullname(self):
@@ -124,6 +121,7 @@ class Category(LEXContentObject):
 	def __repr__(self):
 		return 'Category(name=`{0}`)'.format(self.name)
 
+
 	get_recent = _get_sorter('recent')
 	get_updated = _get_sorter('update')
 	get_popular = _get_sorter('popular')
@@ -162,13 +160,3 @@ class User(LEXContentObject):
 class LoggedInUser(User):
 
 	"""A class representing an authenticated LEX user."""
-
-
-
-
-"""
-import praw
->>> r = praw.Reddit(user_agent='my_cool_application')
->>> submissions = r.get_subreddit('opensource').get_hot(limit=5)
->>> [str(x) for x in submissions]
-"""
