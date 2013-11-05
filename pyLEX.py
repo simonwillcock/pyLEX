@@ -30,14 +30,14 @@ class Config(object):
 		'plugin' : 'lex_filedesc.php?lotGET=%d',
 		'dependancy' : 'lex_deptracker.php?LotID=%d',
 		'download' : 'lex_filedesc.php?lotDOWNLOAD=%d',
-		'add_to_download_list' : 'lex_lotlist_lview.php?cLOTID=%d&addBASKET=T'
-		''
+		'add_to_download_list' : 'lex_lotlist_lview.php?cLOTID=%d&addBASKET=T',
+		'remove_download_history' : 'lex_downhist.php?rmALLDLHIST=T'
 	}
 
 	BROAD_CATEGORIES = {
 		'tools_and_docs' : 'other',
 		'mods' : 'mods',
-		'maps' : 'maps',
+		'maps' : 'map',
 		'dependancy' : 'dependancy',
 		'lots_and_bats' : 'lotbat',
 		'all': 'all'
@@ -210,8 +210,18 @@ class UnauthenticatedLEX(BaseLEX):
 
 		return objects.User(username, *args, **kwargs)
 
+
+	def get_plugin(self, url=None, plugin_id=None):
+		"""Returns a Plugin object for the given url or plugin ID."""
+
+		if bool(url) == bool(plugin_id):
+			raise TypeError('Please specify either url or plugin_id, but not both!')
+		if plugin_id:
+			url = self.config['plugin'] % plugin_id
+		return objects.Plugin.from_url(url)
+
 	def get_recent(self, *args, **kwargs ):
-		
+		print "General recent"
 		"""Return a get_content generator for recent uploads."""
 		
 		params = {'order_by': 'recent'}
@@ -219,7 +229,7 @@ class UnauthenticatedLEX(BaseLEX):
 		return self.get_content(url, params=params, *args, **kwargs)
 
 	def get_popular(self, *args, **kwargs):
-
+		print "General popular"
 		"""Return a get_content generator for the most popular uploads."""
 
 		params = {'order_by': 'popular'}
@@ -234,14 +244,12 @@ class UnauthenticatedLEX(BaseLEX):
 		url = self.config['search']
 		return self.get_content(url, params=params, *args, **kwargs)
 
-	def get_plugin(self, url=None, plugin_id=None):
-		"""Returns a Plugin object for the given url or plugin ID."""
+	def get_category(self, category_name, *args, **kwargs):
 
-		if bool(url) == bool(plugin_id):
-			raise TypeError('Please specify either url or plugin_id, but not both!')
-		if plugin_id:
-			url = self.config['plugin'] % plugin_id
-		return objects.Plugin.from_url(url)
+		"""Return a Category object for the category_name specified."""
+		return Category(self, category_name, *args, **kwargs)
+
+
 
 class LEX(UnauthenticatedLEX):
 	"""Provides access to the LEX API"""

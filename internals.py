@@ -13,6 +13,7 @@
 
 
 from requests import Request
+from requests.compat import urljoin
 
 def _prepare_request(lex_session, url, params, data, auth, files):
 	"""Return a requests Request object that can be "prepared"."""
@@ -31,8 +32,22 @@ def _prepare_request(lex_session, url, params, data, auth, files):
 	request.files = files
 	return request
 	
-def _get_sorted(order='', *args, **kwargs):
+def _get_sorter(order=''):
 	"""Return a function to generate specific plugin listings."""
+	if order == '':
+		order = 'recent'
+
+	def _sorted(self, *args, **kwargs):
+		if not kwargs.get('params'):
+			kwargs['params'] = {}
+		for key, value in self._params.iteritems():
+			kwargs['params'].setdefault(key, value)
+
+		kwargs['params'].setdefault('order_by', order)
+
+		url = self._url
+		return self.lex_session.get_content(url, *args, **kwargs)
+	return _sorted
 
 def _get_user_plugins(user_id='', query='downloaded'):
 	"""Return function to generate a list of a User's plugins."""

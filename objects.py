@@ -14,7 +14,7 @@
 
 import json
 from requests.compat import urljoin
-from internals import _get_user_plugins
+from internals import _get_user_plugins, _get_sorter
 
 
 class LEXContentObject(object):
@@ -22,7 +22,7 @@ class LEXContentObject(object):
 	"""Base class that represents actual LEX objects."""
 
 	def __init__(self,lex_session, json_dict=None, fetch=True):
-		self.lex_sessionlex_session = lex_session
+		self.lex_session= lex_session
 		self.has_fetched = self._populate(json_dict, fetch)
 
 	def __eq__(self, other):
@@ -100,9 +100,31 @@ class Plugin(LEXContentObject):
 		# plugin_info = reddit_session, request_json(url, params=params)
 
 class Category(LEXContentObject):
-	"""A class representing a LEX category."""
+	"""A class representing a LEX category.
 
+	These are somewhat fake as you can't query categories on LEX currently
+	but it is structured this way to make for more intuitive usage 
+	such as c = l.get_category('maps').get_recent(limit=10).
+	"""
 
+	def __init__(self, lex_session, name):
+		super(Category, self).__init__(lex_session, None, False)
+		if name in lex_session.config.BROAD_CATEGORIES:
+			self.name = lex_session.config.BROAD_CATEGORIES[name]
+		else:
+			raise TypeError('`s` is not a valid category.')
+		self._url = lex_session.config['search']
+		self._params = {'broad_type': self.name}
+
+	def __str__(self):
+		return self.config.BROAD_CATEGORIES[name]
+
+	def __repr__(self):
+		return 'Category(name=`{0}`)'.format(self.name)
+
+	get_recent = _get_sorter('recent')
+	get_updated = _get_sorter('update')
+	get_popular = _get_sorter('popular')
 
 class User(LEXContentObject):
 
