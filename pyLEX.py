@@ -4,7 +4,7 @@ import json
 from requests.compat import urljoin
 from handlers import DefaultHandler
 from internals import _prepare_request
-from objects import Plugin
+from objects import Plugin, Category, User
 import decorators
 
 class Config(object):
@@ -17,6 +17,7 @@ class Config(object):
 		'dependancy' : 'lex_deptracker.php?LotID=%d',
 		'download' : 'lex_filedesc.php?lotDOWNLOAD=%d',
 		'add_to_download_list' : 'lex_lotlist_lview.php?cLOTID=%d&addBASKET=T'
+		''
 	}
 
 	BROAD_CATEGORIES = {
@@ -29,7 +30,11 @@ class Config(object):
 
 	}
 	def __init__(self, site_name):
-		self._site_url = "http://sc4devotion.com/csxlex/"
+		obj = dict({'domain':'sc4devotion.com/csxlex/'})
+		self._site_url = "http://" + obj['domain']
+
+		self.user = self.pswd = None
+
 
 	def __getitem__(self, key):
 		"""Return the URL for key."""
@@ -126,6 +131,8 @@ class BaseLEX(object):
 			print c
 		# Update authentication settings
 		self._authentication = True
+		self.user = self.get_user(username)
+		self.user.__class__ = objects.LoggedInUser
 
 	def get_content(self, url, params=None, limit=0, root_field='result'):
 
@@ -166,6 +173,29 @@ class BaseLEX(object):
 				return
 
 
+	
+
+
+
+	@decorators.restrict_access(login=True)
+	def download_plugin(self, *args, **kwargs):
+		pass
+
+class UnauthenticatedLEX(BaseLEX):
+	"""
+	This mixin provides bindings for basic functions of the LEX's API.
+
+	None of these functions require authenticated access.
+	"""
+
+	def __init__(self, *args, **kwargs):
+		super(UnauthenticatedLEX, self).__init__(*args, **kwargs)
+
+	def get_user(self, username, *args, **kwargs):
+		"""Return a User isntance for the username specified."""
+
+		return objects.User(username, *args, **kwargs)
+
 	def get_recent(self, *args, **kwargs ):
 		
 		"""Return a get_content generator for recent uploads."""
@@ -199,14 +229,7 @@ class BaseLEX(object):
 			url = self.config['plugin'] % plugin_id
 		return objects.Plugin.from_url(url)
 
-	
-
-	@decorators.restrict_access(login=True)
-	def download_plugin(self, *args, **kwargs):
-		pass
-
-
-class LEX(BaseLEX):
+class LEX(UnauthenticatedLEX):
 	"""Provides access to the LEX API"""
 
 	

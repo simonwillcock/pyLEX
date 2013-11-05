@@ -19,3 +19,13 @@ def _prepare_request(lex_session, url, params, data, auth, files):
 	
 def _get_sorted(order='', *args, **kwargs):
 	"""Return a function to generate specific plugin listings."""
+
+def _get_user_plugins(user_id='', query='downloaded'):
+	"""Return function to generate a list of a User's plugins."""
+	def _plugins(self, order='', *args, **kwargs):
+		"""Return a get_content generator for some LEXContentObject type."""
+		if not user_id:
+			user_id = self.user.id
+		if query == 'uploaded':
+			kwargs.setdefault('params', {})
+			kwargs['params'].setdefault('creator', user_id)

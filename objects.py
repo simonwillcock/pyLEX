@@ -1,5 +1,6 @@
 import json
 from requests.compat import urljoin
+from internals import _get_user_plugins
 
 
 class LEXContentObject(object):
@@ -45,21 +46,24 @@ class LEXContentObject(object):
 class Plugin(LEXContentObject):
 	
 	"""A class for plugins uploaded to LEX"""
-	@staticmethod
-	def from_url(lex_session, url):
-		pass
+	
 
 	def __init__(self, lex_session, json_dict):
 		super(Plugin, self).__init__(lex_session, json_dict)
 
 		# self.permalink = urljoin(lex_session.config['plugin'], self.id)
 
-
+	def __repr__(self):
+		return 'Plugin(name=\'{0}\', version=\'{1}\', author=\'{2}\')'.format(self.name, 
+															self.version, self.author)
 
 	def __unicode__(self):
 		fullname = self.fullname.replace('\r\n', ' ')
 		return fullname
 
+	@staticmethod
+	def from_url(lex_session, url):
+		pass
 
 	@property
 	def fullname(self):
@@ -81,6 +85,27 @@ class Plugin(LEXContentObject):
 		# params = {}
 		# plugin_info = reddit_session, request_json(url, params=params)
 
+class Category(LEXContentObject):
+	"""A class representing a LEX category."""
+
+
+
+class User(LEXContentObject):
+
+	"""A class representing a LEX user."""
+
+	get_uploaded = _get_user_plugins('uploaded')
+	get_downloaded = _get_user_plugins('downloaded')
+
+	def _get_user_id(self):
+		"""Return LEX User ID."""
+		# Perhaps either by crawling search page....f
+		pass
+
+
+class LoggedInUser(User):
+
+	"""A class representing an authenticated LEX user."""
 
 
 
