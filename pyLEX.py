@@ -18,8 +18,11 @@ import json
 from requests.compat import urljoin
 from handlers import DefaultHandler
 from internals import _prepare_request
-from objects import Plugin, Category, User
+import objects
 import decorators
+from BeautifulSoup import BeautifulSoup
+
+VERSION = 0.1
 
 class Config(object):
 	"""A class containing the configuration for the LEX site"""
@@ -31,7 +34,9 @@ class Config(object):
 		'dependancy' : 'lex_deptracker.php?LotID=%d',
 		'download' : 'lex_filedesc.php?lotDOWNLOAD=%d',
 		'add_to_download_list' : 'lex_lotlist_lview.php?cLOTID=%d&addBASKET=T',
-		'remove_download_history' : 'lex_downhist.php?rmALLDLHIST=T'
+		'remove_download_history' : 'lex_downhist.php?rmALLDLHIST=T',
+		'lottable' : 'lex_lottable.php',
+		'power_search': 'lex_search_00.php'
 	}
 
 	BROAD_CATEGORIES = {
@@ -111,18 +116,43 @@ class BaseLEX(object):
 			#print "*** JSON ITEM ***"
 			#print json_data
 			#print "*****************"
-			return Plugin(self, json_data)
+			return objects.Plugin(self, json_data)
 		else:
 			return json_data
+
+	def _html_lex_objector(self, html_data, *args, **kwargs):
+		"""Return appropriate LEXObject from html_data when possible."""
+		soup = BeautifulSoup(html_data)
+
+		# Check for form page
+		title = soup.find('h4').string
+		if title == 'Power Search':
+			author_select = soup.find('select', {'id': 'i-author'})
+			# options = 
+			desired_options = [option for option in author_select.findAll('option') if option.text == kwargs['user_name']]
+			for option in desired_options:
+				user_json = {'user_name': option.text,
+					'id': option['value']}
+				print user_json
+				return objects.User(self, user_json)
+
+
+	def request_html(self, url, params=None, data=None, as_objects=True, *args, **kwargs):
+		"""Parsing pages that return html. """
+
+		response = self._request(url, params, data)
+		if as_objects:
+			data = self._html_lex_objector(response, *args, **kwargs)
+		else:
+			return response
+		print data
+		return data
 
 
 	def request_json(self, url, params=None, data=None, as_objects=True):
 		response = self._request(url, params, data)
 
 		# Request url just needs to be available for objector to use
-		#print "*** RESPONSE ***"
-		#print response
-		#print "****************"
 		self._request_url = url
 		hook = self._json_lex_objector if as_objects else None
 		delattr(self, '_request_url')
@@ -156,6 +186,7 @@ class BaseLEX(object):
 		fetch_all = fetch_once = False
 		objects_found = 0
 		params = params or {}
+
 		if url == self.config['search'] and 'broad_type' not in params:
 			params['broad_type'] = self.config.BROAD_CATEGORIES['all']
 		if limit is None:
@@ -205,11 +236,15 @@ class UnauthenticatedLEX(BaseLEX):
 	def __init__(self, *args, **kwargs):
 		super(UnauthenticatedLEX, self).__init__(*args, **kwargs)
 
-	def get_user(self, username, *args, **kwargs):
+	def get_creator(self, user_name, *args, **kwargs):
+		
 		"""Return a User isntance for the username specified."""
 
-		return objects.User(username, *args, **kwargs)
-
+		url = self.config['power_search']
+		# return self.get_content(url, params=None, user_name=user_name, *args, **kwargs)
+		user = self.request_html(url, params=None, user_name=user_name, *args, **kwargs)
+		return user
+		
 
 	def get_plugin(self, url=None, plugin_id=None):
 		"""Returns a Plugin object for the given url or plugin ID."""
@@ -221,7 +256,7 @@ class UnauthenticatedLEX(BaseLEX):
 		return objects.Plugin.from_url(url)
 
 	def get_recent(self, *args, **kwargs ):
-		print "General recent"
+		
 		"""Return a get_content generator for recent uploads."""
 		
 		params = {'order_by': 'recent'}
@@ -229,7 +264,7 @@ class UnauthenticatedLEX(BaseLEX):
 		return self.get_content(url, params=params, *args, **kwargs)
 
 	def get_popular(self, *args, **kwargs):
-		print "General popular"
+		
 		"""Return a get_content generator for the most popular uploads."""
 
 		params = {'order_by': 'popular'}
@@ -247,7 +282,7 @@ class UnauthenticatedLEX(BaseLEX):
 	def get_category(self, category_name, *args, **kwargs):
 
 		"""Return a Category object for the category_name specified."""
-		return Category(self, category_name, *args, **kwargs)
+		return objects.Category(self, category_name, *args, **kwargs)
 
 
 

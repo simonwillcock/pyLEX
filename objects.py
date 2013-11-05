@@ -54,6 +54,8 @@ class LEXContentObject(object):
 			json_dict = {}
 
 		for name, value in json_dict.iteritems():
+			if name == 'author':
+				value = self.get_creator(user_name=value)
 			setattr(self, name, value)
 		return bool(json_dict) or fetch
 
@@ -130,13 +132,31 @@ class User(LEXContentObject):
 
 	"""A class representing a LEX user."""
 
-	get_uploaded = _get_user_plugins('uploaded')
-	get_downloaded = _get_user_plugins('downloaded')
+	def __init__(self, lex_session, json_dict, user_name=None, user_id=None):
 
-	def _get_user_id(self):
-		"""Return LEX User ID."""
-		# Perhaps either by crawling search page....f
-		pass
+		super(User, self).__init__(lex_session, json_dict, False)
+		
+		self._url = lex_session.config['search']
+		self._params = {'creator': self.id}
+
+	def __unicode__(self):
+		return self.user_name
+	
+	get_uploaded = get_uploaded_by_recent = _get_sorter('recent')
+	get_uploaded_by_popular = _get_sorter('popular')
+	get_uploaded_by_updated = _get_sorter('update')
+
+	# get_uploaded = _get_user_plugins('uploaded')
+	# get_downloaded = _get_user_plugins('downloaded')
+
+	def _get_user_info(user_name=None, user_id=None):
+		
+		"""Find user_name or user_id from LEX."""
+
+		if bool(user_name) == bool(user_id):
+			raise TypeError('One (and only one) of user_name or user_id is required!')
+	
+
 
 
 class LoggedInUser(User):

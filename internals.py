@@ -14,6 +14,8 @@
 
 from requests import Request
 from requests.compat import urljoin
+from BeautifulSoup import BeautifulSoup
+
 
 def _prepare_request(lex_session, url, params, data, auth, files):
 	"""Return a requests Request object that can be "prepared"."""
@@ -58,3 +60,8 @@ def _get_user_plugins(user_id='', query='downloaded'):
 		if query == 'uploaded':
 			kwargs.setdefault('params', {})
 			kwargs['params'].setdefault('creator', user_id)
+
+
+
+
+
